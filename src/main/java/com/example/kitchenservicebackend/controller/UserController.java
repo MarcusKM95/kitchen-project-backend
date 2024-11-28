@@ -2,6 +2,7 @@ package com.example.kitchenservicebackend.controller;
 
 import com.example.kitchenservicebackend.model.Customer;
 import com.example.kitchenservicebackend.repository.CustomerRepository;
+import com.example.kitchenservicebackend.service.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,36 +27,52 @@ public class UserController {
     @Autowired
     AuthenticationManager authenticationManager;
 
+    @Autowired
+    JWTService jwtService;
+
     @PostMapping("/register")
     public ResponseEntity<String> registerUser(@RequestBody Customer customer) {
-        Customer savedCustomer = null;
-        ResponseEntity response = null;
+        ResponseEntity<String> response;
         try {
             String hashPwd = passwordEncoder.encode(customer.getPwd());
             customer.setPwd(hashPwd);
-            savedCustomer = customerRepository.save(customer);
+
+
+            if (customer.getRoles() == null || customer.getRoles().isEmpty()) {
+                customer.setRoles("ROLE_USER");
+            }
+
+            Customer savedCustomer = customerRepository.save(customer);
             if (savedCustomer.getId() > 0) {
                 response = ResponseEntity.status(HttpStatus.CREATED)
-                        .body("Given user details are successfully registrered");
+                        .body("User successfully registered");
+            } else {
+                response = ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Registration failed");
             }
         } catch (Exception ex) {
-            response = ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An exception occured due to" + ex.getMessage());
+            response = ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Exception occurred: " + ex.getMessage());
         }
         return response;
     }
 
+
     @PostMapping("/dologin")
     public ResponseEntity<String> doLogin(@RequestBody Customer customer) {
-        Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(customer.getEmail(), customer.getPwd()));
-        if(authentication.isAuthenticated()){
-            //return JwtResponseDTO.builder()
-            //        .accessToken(jwtService.GenerateToken(authRequestDTO.getUsername()).build();
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(customer.getEmail(), customer.getPwd()));
+
+        if (authentication.isAuthenticated()) {
+            String jwt = jwtService.generateToken(customer.getEmail()); // Brug JWTService til at generere token
             return ResponseEntity.status(HttpStatus.OK)
-                    .body("Du er logget på");
+                    .header("Authorization", "Bearer " + jwt)  // Returner JWT i headeren
+                    .body("Welcome " + customer.getEmail() + ", you are successfully logged in");
         } else {
-            throw new UsernameNotFoundException("invalid user request..!!");
+            throw new UsernameNotFoundException("Invalid user request..!!");
         }
     }
+
 }
+
+

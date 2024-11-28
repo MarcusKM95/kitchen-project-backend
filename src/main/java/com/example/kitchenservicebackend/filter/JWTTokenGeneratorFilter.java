@@ -1,6 +1,5 @@
 package com.example.kitchenservicebackend.filter;
 
-import com.example.kitchenservicebackend.config.SecurityConfig;
 import com.example.kitchenservicebackend.constans.SecurityConstants;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -22,25 +21,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class JWTTokenGeneratorFilter extends OncePerRequestFilter {
-    private SecurityConfig securityConfig;
-
-    public JWTTokenGeneratorFilter() {
-        this.securityConfig = securityConfig;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        System.out.printf("JWT kaldt");
+        System.out.println("JWT kaldt");
         if (null != authentication) {
             SecretKey key = Keys.hmacShaKeyFor(SecurityConstants.JWT_KEY.getBytes(StandardCharsets.UTF_8));
-            String jwt = Jwts.builder().setIssuer("KitchenPro").setSubject("JWT Token")
+            String jwt = Jwts.builder()
+                    .setIssuer("KitchenPro")
+                    .setSubject("JWT Token")
                     .claim("username", authentication.getName())
                     .claim("authorities", populateAuthorities(authentication.getAuthorities()))
                     .setIssuedAt(new Date())
-                    .setExpiration(new Date((new Date()).getTime() + 30000000))
-                    .signWith(key).compact();
+                    .setExpiration(new Date((new Date()).getTime() + 30000000)) // 8,3 timer
+                    .signWith(key)
+                    .compact();
             response.setHeader(SecurityConstants.JWT_HEADER, jwt);
             System.out.println(jwt);
         }
@@ -50,10 +47,7 @@ public class JWTTokenGeneratorFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return !request.getServletPath().equals("/dologin");
-        //return !request.getServletPath().equals("/myBalance");
     }
-
-
 
     private String populateAuthorities(Collection<? extends GrantedAuthority> collection) {
         Set<String> authoritiesSet = new HashSet<>();

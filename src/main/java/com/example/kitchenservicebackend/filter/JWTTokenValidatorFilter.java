@@ -1,6 +1,5 @@
 package com.example.kitchenservicebackend.filter;
 
-import com.example.kitchenservicebackend.config.SecurityConfig;
 import com.example.kitchenservicebackend.constans.SecurityConstants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -22,47 +21,44 @@ import java.nio.charset.StandardCharsets;
 
 public class JWTTokenValidatorFilter extends OncePerRequestFilter {
 
-    private SecurityConfig securityConfig;
-
-    public JWTTokenValidatorFilter() {
-        this.securityConfig = securityConfig;
-    }
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String jwt = request.getHeader("Authorization"); // Проверка на заголовок Authorization
+        String jwt = request.getHeader(SecurityConstants.JWT_HEADER); // Header "Authorization"
         if (jwt != null && jwt.startsWith("Bearer ")) {
-            jwt = jwt.substring(7); // Убираем "Bearer "
+            jwt = jwt.substring(7); // Fjern "Bearer "
             try {
-                SecretKey key = Keys.hmacShaKeyFor(
-                        SecurityConstants.JWT_KEY.getBytes(StandardCharsets.UTF_8));
+                SecretKey key = Keys.hmacShaKeyFor(SecurityConstants.JWT_KEY.getBytes(StandardCharsets.UTF_8));
 
+                // Parse JWT-tokenet
                 Claims claims = Jwts.parserBuilder()
                         .setSigningKey(key)
                         .build()
                         .parseClaimsJws(jwt)
                         .getBody();
 
+                // Hent brugernavn og roller fra tokenet
                 String username = String.valueOf(claims.get("username"));
                 String authorities = (String) claims.get("authorities");
 
-                Authentication auth = new UsernamePasswordAuthenticationToken(username, null,
-                        AuthorityUtils.commaSeparatedStringToAuthorityList(authorities));
+                // Opret Authentication-objekt
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                        username, null, AuthorityUtils.commaSeparatedStringToAuthorityList(authorities));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (Exception e) {
-                System.err.println("JWT parsing failed: " + e.getMessage());
-                throw new BadCredentialsException("Invalid Token received!", e);
+                System.err.println("Fejl under validering af JWT: " + e.getMessage());
+                throw new BadCredentialsException("Ugyldigt token modtaget!", e);
             }
         } else {
-            System.out.println("JWT header is missing or malformed.");
+            System.out.println("JWT-header mangler eller er ugyldig.");
         }
+
         filterChain.doFilter(request, response);
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        //if dologin, så ikke kør validate. ellers kør validate. (hvad med register)
+        // Undgå validering for login og register
         return request.getServletPath().equals("/dologin") || request.getServletPath().equals("/register");
     }
 }
