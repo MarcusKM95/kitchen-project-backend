@@ -22,11 +22,6 @@ public class Customer {
     @Column(nullable = false)
     private String roles; // Kan indeholde roller som "ROLE_USER", "ROLE_ADMIN"
 
-   // @Column
-  // @ElementCollection(fetch = FetchType.EAGER)
-    // private List<String> roles = new ArrayList<>();
-
-
 
     public Customer() {
     }
