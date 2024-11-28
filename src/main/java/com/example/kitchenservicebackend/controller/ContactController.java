@@ -9,33 +9,31 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:63342")  // Matcher frontend URL
+@RequestMapping("/api") // Base path for all endpoints in this controller
 public class ContactController {
 
     @Autowired
     private ContactService contactService;
 
-    @GetMapping
+    @GetMapping("/contacts")
     public List<Contact> getAllContacts() {
         return contactService.getAllContacts();
     }
 
-
-
-    @PostMapping("/api/contacts")
+    @PostMapping("/contacts")
     public ResponseEntity<String> createContact(@RequestBody Contact contact) {
-        contactService.createContact(contact); // Gem kontakt i databasen
+        contactService.createContact(contact); // Save contact to database
 
-        // Returner bekræftelsesbesked som tekst
+        // Return confirmation message as text
         return ResponseEntity.ok("Tak for din besked! Vi vil kontakte dig snart.");
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/contacts/{id}")
     public Contact updateContact(@PathVariable int id, @RequestBody Contact contactDetails) {
         return contactService.updateContact(id, contactDetails);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/contacts/{id}")
     public void deleteContact(@PathVariable int id) {
         contactService.deleteContact(id);
     }
