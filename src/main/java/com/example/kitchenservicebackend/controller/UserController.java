@@ -1,7 +1,7 @@
 package com.example.kitchenservicebackend.controller;
 
-import com.example.kitchenservicebackend.model.Customer;
-import com.example.kitchenservicebackend.repository.CustomerRepository;
+import com.example.kitchenservicebackend.model.User;  // Eller Customer hvis du bruger det
+import com.example.kitchenservicebackend.repository.UserRepository;  // Eller CustomerRepository
 import com.example.kitchenservicebackend.service.JWTService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     @Autowired
-    CustomerRepository customerRepository;
+    UserRepository userRepository;  // Eller CustomerRepository
 
     @Autowired
     PasswordEncoder passwordEncoder;
@@ -30,20 +30,20 @@ public class UserController {
     @Autowired
     JWTService jwtService;
 
+    // Registreringsmetode
     @PostMapping("/register")
-    public ResponseEntity<String> registerUser(@RequestBody Customer customer) {
+    public ResponseEntity<String> registerUser(@RequestBody User user) {
         ResponseEntity<String> response;
         try {
-            String hashPwd = passwordEncoder.encode(customer.getPwd());
-            customer.setPwd(hashPwd);
+            String hashPwd = passwordEncoder.encode(user.getPassword());
+            user.setPassword(hashPwd);
 
-
-            if (customer.getRoles() == null || customer.getRoles().isEmpty()) {
-                customer.setRoles("ROLE_USER");
+            if (user.getRoles() == null || user.getRoles().isEmpty()) {
+                user.setRoles("ROLE_USER");
             }
 
-            Customer savedCustomer = customerRepository.save(customer);
-            if (savedCustomer.getId() > 0) {
+            User savedUser = userRepository.save(user);
+            if (savedUser.getId() > 0) {
                 response = ResponseEntity.status(HttpStatus.CREATED)
                         .body("User successfully registered");
             } else {
@@ -57,22 +57,19 @@ public class UserController {
         return response;
     }
 
-
-    @PostMapping("/dologin")
-    public ResponseEntity<String> doLogin(@RequestBody Customer customer) {
+    // Login metode
+    @PostMapping("/login")
+    public ResponseEntity<String> doLogin(@RequestBody User user) {
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(customer.getEmail(), customer.getPwd()));
+                new UsernamePasswordAuthenticationToken(user.getEmail(), user.getPassword()));
 
         if (authentication.isAuthenticated()) {
-            String jwt = jwtService.generateToken(customer.getEmail()); // Brug JWTService til at generere token
+            String jwt = jwtService.generateToken(user.getEmail()); // Generer JWT token
             return ResponseEntity.status(HttpStatus.OK)
-                    .header("Authorization", "Bearer " + jwt)  // Returner JWT i headeren
-                    .body("Welcome " + customer.getEmail() + ", you are successfully logged in");
+                    .header("Authorization", "Bearer " + jwt)  // Returner JWT token i header
+                    .body("Welcome " + user.getEmail() + ", you are successfully logged in");
         } else {
             throw new UsernameNotFoundException("Invalid user request..!!");
         }
     }
-
 }
-
-
