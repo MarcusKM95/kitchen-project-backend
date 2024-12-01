@@ -1,31 +1,30 @@
 package com.example.kitchenservicebackend.model;
 
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.Id;
+
+import java.util.List;
 
 @Setter
 @Getter
 @Entity
 public class User {
+
+    // Getters and Setters
+    @Getter
+    @Setter
+    @jakarta.persistence.Id
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private String email;
     private String username;
     private String password;
+    private String email;
     private String phone;
 
-    // Getters and Setters
+    @ElementCollection(fetch = FetchType.EAGER)
+    private List<String> roles;
 
-    public CharSequence getRoles() {
-        return null;
-    }
-
-    public void setRoles(String roleUser) {
-    }
 }

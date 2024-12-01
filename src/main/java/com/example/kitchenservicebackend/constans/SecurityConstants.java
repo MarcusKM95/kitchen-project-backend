@@ -1,19 +1,22 @@
 package com.example.kitchenservicebackend.constans;
 
-public class SecurityConstants {
+import org.springframework.beans.factory.annotation.Value;
 
-   // JWT-relaterede konstanter
+public final class SecurityConstants {
+
+   // Konstanter, der bruges i JWT-token generering og validation
    public static final String JWT_HEADER = "Authorization";
    public static final String JWT_PREFIX = "Bearer ";
 
-   // JWT-nøgle (hent fra miljø eller konfigurationsfil)
-   public static final String JWT_KEY = "mysecurejwtsecretmysecurejwtsecret"; // Brug @Value i stedet for hardkodning i produktion!
+   // Hent denne fra application.properties
+   @Value("${jwt.secret}")
+   public static String JWT_KEY;
 
-   // Roller
-   public static final String ROLE_ADMIN = "ROLE_ADMIN";
-   public static final String ROLE_USER = "ROLE_USER";
-
+   // Forhindre instansiering af klassen
    private SecurityConstants() {
-      // For at forhindre instansiering af denne klasse
+      throw new UnsupportedOperationException("Utility class should not be instantiated");
    }
+
+   @Value("${jwt.expiration}")
+   public static long JWT_EXPIRATION;
 }
