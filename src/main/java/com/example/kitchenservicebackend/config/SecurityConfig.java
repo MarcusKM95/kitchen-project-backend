@@ -37,22 +37,22 @@ public class SecurityConfig {
         requestHandler.setCsrfRequestAttributeName("_csrf");
 
         http
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .cors(corsCustomizer -> corsCustomizer.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless session management for JWT
+                .cors(corsCustomizer -> corsCustomizer.configurationSource(corsConfigurationSource())) // CORS configuration
                 .csrf(csrf -> csrf
                         .csrfTokenRequestHandler(requestHandler)
-                        .ignoringRequestMatchers("/api/contacts", "/login", "/register", "/dologin", "/admin/**")
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers("/api/uploads/**", "/api/contacts", "/login", "/register", "/dologin", "/admin/**") // Ignore CSRF for these public endpoints
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // CSRF token handling for browsers
                 )
-                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
-                .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class)
+                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class) // Add JWT Generator filter for token creation
+                .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class) // Add JWT Validator filter to validate the token
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/**").hasRole("ADMIN") // Admin protection
-                        .requestMatchers("/api/contacts", "/notices", "/contact", "/register", "/login", "/dologin").permitAll() // Public endpoints
-                        .anyRequest().authenticated() // All else requires authentication
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // Admin protected
+                        .requestMatchers("/api/contacts", "/notices", "/contact", "/register", "/login", "/dologin", "/api/images/upload").permitAll() // Public endpoints, including image upload
+                        .anyRequest().authenticated() // All other requests require authentication
                 )
-                .formLogin(Customizer.withDefaults())
-                .httpBasic(Customizer.withDefaults());
+                .formLogin(Customizer.withDefaults()) // Enable form login if needed
+                .httpBasic(Customizer.withDefaults()); // Enable basic authentication if needed
 
         return http.build();
     }
@@ -60,15 +60,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:63342")); // Correct origin without path
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Collections.singletonList("*"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:63342")); // Adjust for your frontend's URL
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allow these HTTP methods
+        configuration.setAllowedHeaders(Collections.singletonList("*")); // Allow all headers (you may want to limit this for security)
+        configuration.setExposedHeaders(Arrays.asList("Authorization")); // Expose the Authorization header so the client can access the JWT token
+        configuration.setAllowCredentials(true); // Allow credentials to be included
+        configuration.setMaxAge(3600L); // Cache pre-flight requests for 1 hour
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Apply to all endpoints
+        source.registerCorsConfiguration("/**", configuration); // Apply CORS configuration to all endpoints
         return source;
     }
 
