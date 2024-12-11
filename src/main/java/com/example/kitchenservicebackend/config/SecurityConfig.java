@@ -51,7 +51,7 @@ public class SecurityConfig {
                 .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class) // JWT-token generering
                 .authorizeRequests(auth -> auth
                         .requestMatchers("/admin/**").hasRole("ADMIN") // Kun ADMIN kan tilgå /admin
-                        .requestMatchers("/api/contacts", "/notices", "/contact", "/register", "/login").permitAll() // Åben adgang til disse ruter
+                        .requestMatchers("/api/gallery/upload**","/api/contacts", "/notices", "/contact", "/register", "/login").permitAll() // Åben adgang til disse ruter
                         .anyRequest().authenticated() // Alle andre ruter kræver autentifikation
                 )
                 .httpBasic(Customizer.withDefaults()); // HTTP Basic Auth for standard autentifikation

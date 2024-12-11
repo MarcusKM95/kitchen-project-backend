@@ -24,11 +24,7 @@ import java.nio.charset.StandardCharsets;
 
 public class JWTTokenValidatorFilter extends OncePerRequestFilter {
 
-    @PostConstruct
-    public void init() {
-        // Use the secure key generation method
-        SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256); // or HS512 if preferred
-    }
+
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
@@ -37,7 +33,8 @@ public class JWTTokenValidatorFilter extends OncePerRequestFilter {
         if (jwt != null && jwt.startsWith("Bearer ")) {
             jwt = jwt.substring(7); // Fjern "Bearer "
             try {
-                SecretKey key = Keys.hmacShaKeyFor(SecurityConstants.JWT_PREFIX.getBytes(StandardCharsets.UTF_8));
+                SecretKey key = Keys.hmacShaKeyFor(jwt.getBytes(StandardCharsets.UTF_8));
+
 
                 // Parse JWT-tokenet
                 Claims claims = Jwts.parserBuilder()

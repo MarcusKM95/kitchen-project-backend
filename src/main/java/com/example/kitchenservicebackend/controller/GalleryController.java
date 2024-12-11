@@ -1,65 +1,46 @@
 package com.example.kitchenservicebackend.controller;
 
-import com.example.kitchenservicebackend.model.Gallery;
-import com.example.kitchenservicebackend.repository.GalleryRepository;
+import com.example.kitchenservicebackend.service.GalleryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-import java.util.Optional;
+import java.io.IOException;
 
 @RestController
-@CrossOrigin
 @RequestMapping("/api/gallery")
 public class GalleryController {
 
     @Autowired
-    private GalleryRepository galleryRepository;
+    private GalleryService galleryService;
 
-    // Hent alle billeder
-    @GetMapping
-    public List<Gallery> getAllImages() {
-        return galleryRepository.findAll();
-    }
-
-    // Hent et billede baseret på ID
-    @GetMapping("/{id}")
-    public ResponseEntity<Gallery> getImageById(@PathVariable Long id) {
-        Optional<Gallery> gallery = galleryRepository.findById(id);
-        return gallery.map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // Opret et nyt billede
-    @PostMapping
-    public ResponseEntity<Gallery> createImage(@RequestBody Gallery gallery) {
-        Gallery savedGallery = galleryRepository.save(gallery);
-        return ResponseEntity.status(201).body(savedGallery);
-    }
-
-    // Opdater et billede
-    @PutMapping("/{id}")
-    public ResponseEntity<Gallery> updateImage(
-            @PathVariable Long id,
-            @RequestBody Gallery updatedGallery) {
-        return galleryRepository.findById(id).map(existingGallery -> {
-            existingGallery.setTitle(updatedGallery.getTitle());
-            existingGallery.setDescription(updatedGallery.getDescription());
-            existingGallery.setUrl(updatedGallery.getUrl());
-            galleryRepository.save(existingGallery);
-            return ResponseEntity.ok(existingGallery);
-        }).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    // Slet et billede
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteImage(@PathVariable Long id) {
-        if (galleryRepository.existsById(id)) {
-            galleryRepository.deleteById(id);
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
+    // Endpoint til at uploade billede
+    @PostMapping("/upload")
+    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
+        try {
+            galleryService.uploadImage(file);
+            return new ResponseEntity<>("Billede uploadet succesfuldt!", HttpStatus.OK);
+        } catch (IOException e) {
+            return new ResponseEntity<>("Fejl under upload af billede", HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    // Endpoint til at slette billede
+    @DeleteMapping("/delete/{filename}")
+    public ResponseEntity<String> deleteImage(@PathVariable String filename) {
+        boolean deleted = galleryService.deleteImage(filename);
+        if (deleted) {
+            return new ResponseEntity<>("Billede slettet succesfuldt!", HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>("Billede ikke fundet", HttpStatus.NOT_FOUND);
+        }
+    }
+
+    // Endpoint til at hente liste over billeder
+    @GetMapping("/images")
+    public ResponseEntity<?> getImages() {
+        return new ResponseEntity<>(galleryService.getAllImages(), HttpStatus.OK);
     }
 }
