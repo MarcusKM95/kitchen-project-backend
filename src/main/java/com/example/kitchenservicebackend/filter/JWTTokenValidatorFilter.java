@@ -3,7 +3,9 @@ package com.example.kitchenservicebackend.filter;
 import com.example.kitchenservicebackend.constans.SecurityConstants;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,6 +24,12 @@ import java.nio.charset.StandardCharsets;
 
 public class JWTTokenValidatorFilter extends OncePerRequestFilter {
 
+    @PostConstruct
+    public void init() {
+        // Use the secure key generation method
+        SecretKey secretKey = Keys.secretKeyFor(SignatureAlgorithm.HS256); // or HS512 if preferred
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
             throws ServletException, IOException {
@@ -29,7 +37,7 @@ public class JWTTokenValidatorFilter extends OncePerRequestFilter {
         if (jwt != null && jwt.startsWith("Bearer ")) {
             jwt = jwt.substring(7); // Fjern "Bearer "
             try {
-                SecretKey key = Keys.hmacShaKeyFor(SecurityConstants.JWT_KEY.getBytes(StandardCharsets.UTF_8));
+                SecretKey key = Keys.hmacShaKeyFor(SecurityConstants.JWT_PREFIX.getBytes(StandardCharsets.UTF_8));
 
                 // Parse JWT-tokenet
                 Claims claims = Jwts.parserBuilder()
@@ -52,6 +60,9 @@ public class JWTTokenValidatorFilter extends OncePerRequestFilter {
             }
         } else {
             System.out.println("JWT-header mangler eller er ugyldig.");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);  // Returner 401 Unauthorized
+            response.getWriter().write("JWT-header mangler eller er ugyldig");
+            return;  // Stop videre behandling af requesten
         }
 
         filterChain.doFilter(request, response);

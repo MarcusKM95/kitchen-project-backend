@@ -31,27 +31,30 @@ public class SecurityConfig {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
+
+
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
         requestHandler.setCsrfRequestAttributeName("_csrf");
 
+        // Konfiguration for HTTP Security
         http
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .cors(corsCustomizer -> corsCustomizer.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Ingen session
+                .cors(corsCustomizer -> corsCustomizer.configurationSource(corsConfigurationSource())) // Aktiver CORS
                 .csrf(csrf -> csrf
                         .csrfTokenRequestHandler(requestHandler)
-                        .ignoringRequestMatchers("/api/contacts", "/register", "/login", "/admin/**")
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers("/api/contacts", "/register", "/login", "/admin/**") // Ignorer CSRF for specifikke ruter
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // Brug cookie-baseret CSRF
                 )
-                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
-                .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class)
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/contacts", "/notices", "/contact", "/register", "/login").permitAll()
-                        .anyRequest().authenticated()
+                .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class) // JWT-validering før BasicAuthentication
+                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class) // JWT-token generering
+                .authorizeRequests(auth -> auth
+                        .requestMatchers("/admin/**").hasRole("ADMIN") // Kun ADMIN kan tilgå /admin
+                        .requestMatchers("/api/contacts", "/notices", "/contact", "/register", "/login").permitAll() // Åben adgang til disse ruter
+                        .anyRequest().authenticated() // Alle andre ruter kræver autentifikation
                 )
-                .httpBasic(Customizer.withDefaults());
+                .httpBasic(Customizer.withDefaults()); // HTTP Basic Auth for standard autentifikation
 
         return http.build();
     }
@@ -59,25 +62,25 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:63342", "http://example.com"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Collections.singletonList("*"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:63342", "http://example.com")); // Tillad disse oprindelser
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Tillad disse metoder
+        configuration.setAllowedHeaders(Collections.singletonList("*")); // Tillad alle headers
+        configuration.setExposedHeaders(Arrays.asList("Authorization")); // Eksponér Authorization header
+        configuration.setAllowCredentials(true); // Tillad credentials (cookies, authorization headers)
+        configuration.setMaxAge(3600L); // Angiv maxAge for CORS-politik
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", configuration); // Anvend CORS-konfiguration på alle endpoints
         return source;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); // Brug delegating password encoder til hashning
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+        return config.getAuthenticationManager(); // Opret AuthenticationManager
     }
 }

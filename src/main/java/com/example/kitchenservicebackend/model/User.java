@@ -11,8 +11,6 @@ import java.util.List;
 @Getter
 @Entity
 public class User {
-
-    // Getters and Setters
     @Getter
     @Setter
     @jakarta.persistence.Id

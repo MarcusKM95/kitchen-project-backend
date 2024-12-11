@@ -29,7 +29,7 @@ public class JWTTokenGeneratorFilter extends OncePerRequestFilter {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         System.out.println("JWT kaldt");
         if (null != authentication) {
-            SecretKey key = Keys.hmacShaKeyFor(SecurityConstants.JWT_KEY.getBytes(StandardCharsets.UTF_8));
+            SecretKey key = Keys.hmacShaKeyFor(SecurityConstants.JWT_HEADER.getBytes(StandardCharsets.UTF_8));
             String jwt = Jwts.builder()
                     .setIssuer("KitchenPro")
                     .setSubject("JWT Token")

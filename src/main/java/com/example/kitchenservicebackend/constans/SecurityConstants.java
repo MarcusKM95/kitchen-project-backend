@@ -1,22 +1,24 @@
 package com.example.kitchenservicebackend.constans;
 
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
-public final class SecurityConstants {
+@Getter
+@Component
+public class SecurityConstants {
 
-   // Konstanter, der bruges i JWT-token generering og validation
    public static final String JWT_HEADER = "Authorization";
    public static final String JWT_PREFIX = "Bearer ";
 
+
    // Hent denne fra application.properties
    @Value("${jwt.secret}")
-   public static String JWT_KEY;
+   private String jwtKey;
 
-   // Forhindre instansiering af klassen
-   private SecurityConstants() {
-      throw new UnsupportedOperationException("Utility class should not be instantiated");
-   }
-
+   // Hent expiration tid fra application.properties
    @Value("${jwt.expiration}")
-   public static long JWT_EXPIRATION;
+   private long jwtExpiration;
+
 }
+
