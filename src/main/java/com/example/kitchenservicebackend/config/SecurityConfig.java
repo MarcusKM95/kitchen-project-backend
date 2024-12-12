@@ -1,7 +1,6 @@
 package com.example.kitchenservicebackend.config;
 
 import com.example.kitchenservicebackend.filter.JWTTokenGeneratorFilter;
-import com.example.kitchenservicebackend.filter.JWTTokenValidatorFilter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,8 +14,6 @@ import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
-import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -31,30 +28,20 @@ public class SecurityConfig {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        CsrfTokenRequestAttributeHandler requestHandler = new CsrfTokenRequestAttributeHandler();
-        requestHandler.setCsrfRequestAttributeName("_csrf");
-
-        // Konfiguration for HTTP Security
         http
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Ingen session
-                .cors(corsCustomizer -> corsCustomizer.configurationSource(corsConfigurationSource())) // Aktiver CORS
-                .csrf(csrf -> csrf
-                        .csrfTokenRequestHandler(requestHandler)
-                        .ignoringRequestMatchers("/api/contacts", "/register", "/login", "/admin/**") // Ignorer CSRF for specifikke ruter
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()) // Brug cookie-baseret CSRF
-                )
-                .addFilterBefore(new JWTTokenValidatorFilter(), BasicAuthenticationFilter.class) // JWT-validering før BasicAuthentication
-                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class) // JWT-token generering
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable()) // Deaktiver CSRF for REST APIs
+                .addFilterBefore(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
+                .addFilterAfter(new JWTTokenGeneratorFilter(), BasicAuthenticationFilter.class)
                 .authorizeRequests(auth -> auth
-                        .requestMatchers("/admin/**").hasRole("ADMIN") // Kun ADMIN kan tilgå /admin
-                        .requestMatchers("/api/gallery/upload**","/api/contacts", "/notices", "/contact", "/register", "/login").permitAll() // Åben adgang til disse ruter
-                        .anyRequest().authenticated() // Alle andre ruter kræver autentifikation
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/gallery", "/api/gallery/upload**", "/api/contacts", "/register", "/login").permitAll()
+                        .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults()); // HTTP Basic Auth for standard autentifikation
+                .httpBasic(Customizer.withDefaults());
 
         return http.build();
     }
@@ -62,25 +49,24 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:63342", "http://example.com")); // Tillad disse oprindelser
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Tillad disse metoder
-        configuration.setAllowedHeaders(Collections.singletonList("*")); // Tillad alle headers
-        configuration.setExposedHeaders(Arrays.asList("Authorization")); // Eksponér Authorization header
-        configuration.setAllowCredentials(true); // Tillad credentials (cookies, authorization headers)
-        configuration.setMaxAge(3600L); // Angiv maxAge for CORS-politik
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Collections.singletonList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // Anvend CORS-konfiguration på alle endpoints
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder(); // Brug delegating password encoder til hashning
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager(); // Opret AuthenticationManager
+        return config.getAuthenticationManager();
     }
 }

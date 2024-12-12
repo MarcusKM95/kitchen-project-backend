@@ -1,5 +1,6 @@
 package com.example.kitchenservicebackend.service;
 
+import com.example.kitchenservicebackend.repository.GalleryRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Objects;
 
 @Service
 public class GalleryService {
@@ -16,33 +18,46 @@ public class GalleryService {
     @Value("${gallery.upload-dir}")
     private String uploadDir;
 
+    public GalleryService(GalleryRepository galleryRepository) {
+    }
+
     // Upload billede
     public void uploadImage(MultipartFile file) throws IOException {
-        // Kontroller, at filen ikke er tom
         if (file.isEmpty()) {
-            throw new IOException("Filen er tom");
+            throw new IllegalArgumentException("Uploaded file is empty");
         }
 
-        // Skab et sti til at gemme filen
-        Path path = Paths.get(uploadDir + File.separator + file.getOriginalFilename());
+        Path uploadPath = Paths.get(uploadDir);
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath); // Create directory if it doesn't exist
+        }
 
-        // Gem filen på den angivne sti
+        Path path = uploadPath.resolve(Objects.requireNonNull(file.getOriginalFilename()));
         Files.write(path, file.getBytes());
+        System.out.println("File uploaded: " + path.toAbsolutePath());
     }
 
     // Slet billede
     public boolean deleteImage(String filename) {
         Path path = Paths.get(uploadDir + File.separator + filename);
         try {
-            return Files.deleteIfExists(path); // Returnerer true hvis filen blev slettet
+            if (!Files.exists(path)) {
+                System.out.println("File not found: " + filename);
+                return false;
+            }
+            return Files.deleteIfExists(path);
         } catch (IOException e) {
-            return false; // Hvis filen ikke kunne slettes
+            e.printStackTrace();
+            return false;
         }
     }
 
     // Hent alle billeder
     public String[] getAllImages() {
         File folder = new File(uploadDir);
-        return folder.list((dir, name) -> name.endsWith(".jpg") || name.endsWith(".png")); // Eller andre formater
+        if (!folder.exists() || !folder.isDirectory()) {
+            return new String[0]; // Return empty array if directory doesn't exist
+        }
+        return folder.list((dir, name) -> name.matches(".*\\.(jpg|png|jpeg|gif)$"));
     }
 }

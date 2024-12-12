@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 
 @RestController
 @RequestMapping("/api/gallery")
@@ -16,16 +15,17 @@ public class GalleryController {
     @Autowired
     private GalleryService galleryService;
 
-    // Endpoint til at uploade billede
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> handleFileUpload(@RequestParam("file") MultipartFile file) {
         try {
             galleryService.uploadImage(file);
-            return new ResponseEntity<>("Billede uploadet succesfuldt!", HttpStatus.OK);
-        } catch (IOException e) {
-            return new ResponseEntity<>("Fejl under upload af billede", HttpStatus.INTERNAL_SERVER_ERROR);
+            return ResponseEntity.ok("File uploaded successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error: " + e.getMessage());
         }
     }
+
+
 
     // Endpoint til at slette billede
     @DeleteMapping("/delete/{filename}")
