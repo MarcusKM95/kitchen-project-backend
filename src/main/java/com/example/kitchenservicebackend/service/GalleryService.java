@@ -15,10 +15,13 @@ import java.util.Objects;
 @Service
 public class GalleryService {
 
+    private final GalleryRepository galleryRepository;
+
     @Value("${gallery.upload-dir}")
     private String uploadDir;
 
     public GalleryService(GalleryRepository galleryRepository) {
+        this.galleryRepository = galleryRepository;
     }
 
     // Upload billede
