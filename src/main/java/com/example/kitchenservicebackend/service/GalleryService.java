@@ -56,6 +56,7 @@ public class GalleryService {
     }
 
 
+
     // Slet billede
     public void deleteImage(Long id) {
         Optional<Gallery> gallery = galleryRepository.findById(id);

@@ -50,6 +50,7 @@ public class GalleryController {
         }
     }
 
+
     @GetMapping("/image/{id}")
     public ResponseEntity<?> getImageById(@PathVariable Long id) {
         Optional<Gallery> gallery = galleryService.getImageById(id);
