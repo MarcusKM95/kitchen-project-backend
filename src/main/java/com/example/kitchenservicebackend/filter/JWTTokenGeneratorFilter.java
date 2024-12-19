@@ -7,6 +7,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -16,20 +17,19 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class JWTTokenGeneratorFilter extends OncePerRequestFilter {
+
+    @Value("${jwt.secret}")
+    private String jwtSecret; // Hent JWT secret fra application.properties
 
     @Override
     protected void doFilterInternal(@NotNull HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
             throws ServletException, IOException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        System.out.println("JWT kaldt");
-        if (null != authentication) {
-            SecretKey key = Keys.hmacShaKeyFor(SecurityConstants.JWT_HEADER.getBytes(StandardCharsets.UTF_8));
+        if (authentication != null) {
+            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8)); // Brug secret key fra config
             String jwt = Jwts.builder()
                     .setIssuer("KitchenPro")
                     .setSubject("JWT Token")
@@ -40,14 +40,14 @@ public class JWTTokenGeneratorFilter extends OncePerRequestFilter {
                     .signWith(key)
                     .compact();
             response.setHeader(SecurityConstants.JWT_HEADER, jwt);
-            System.out.println(jwt);
         }
         filterChain.doFilter(request, response);
     }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getServletPath().equals("/login");
+        List<String> excludedEndpoints = Arrays.asList("/login", "/register", "/api/gallery", "/api/gallery/images/**");
+        return excludedEndpoints.stream().anyMatch(path -> request.getServletPath().startsWith(path));
     }
 
     private String populateAuthorities(Collection<? extends GrantedAuthority> collection) {
