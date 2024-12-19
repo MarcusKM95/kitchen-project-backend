@@ -13,6 +13,7 @@ public class Gallery {
     private String name;
 
 
+
     public Gallery() {}
 
     public Gallery(String name) {
